@@ -1,0 +1,74 @@
+# Docker setup matching Elements Project Tutorial
+# https://elementsproject.org/elements-code-tutorial/working-environment
+#
+# This creates the same environment as the tutorial:
+# - 1 Bitcoin Core node (regtest)
+# - 2 Elements nodes (elementsregtest) connected to each other
+
+services:
+  # Bitcoin Core - Main chain for pegin testing
+  bitcoind:
+    image: blockstream/bitcoind:latest
+    container_name: tutorial_bitcoind
+    volumes:
+      - ./bitcoindir:/root/.bitcoin
+    ports:
+      - "18888:18888"  # RPC
+      - "18889:18889"  # P2P
+    networks:
+      - elements_network
+    restart: unless-stopped
+    command: bitcoind -regtest
+    healthcheck:
+      test: ["CMD", "bitcoin-cli", "-regtest", "-rpcuser=user3", "-rpcpassword=password3", "getblockchaininfo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Elements Node 1
+  elementsd1:
+    image: blockstream/elementsd:latest
+    container_name: tutorial_elementsd1
+    volumes:
+      - ./elementsdir1:/root/.elements
+    ports:
+      - "18884:18884"  # RPC
+      - "18886:18886"  # P2P
+    networks:
+      - elements_network
+    restart: unless-stopped
+    command: elementsd -chain=elementsregtest
+    depends_on:
+      bitcoind:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "elements-cli", "-chain=elementsregtest", "-rpcuser=user1", "-rpcpassword=password1", "getblockchaininfo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Elements Node 2 (connects to Node 1)
+  elementsd2:
+    image: blockstream/elementsd:latest
+    container_name: tutorial_elementsd2
+    volumes:
+      - ./elementsdir2:/root/.elements
+    ports:
+      - "18885:18885"  # RPC
+      - "18887:18887"  # P2P
+    networks:
+      - elements_network
+    restart: unless-stopped
+    command: elementsd -chain=elementsregtest
+    depends_on:
+      elementsd1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "elements-cli", "-chain=elementsregtest", "-rpcuser=user2", "-rpcpassword=password2", "getblockchaininfo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  elements_network:
+    driver: bridge
