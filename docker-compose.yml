@@ -1,31 +1,10 @@
-# Docker setup matching Elements Project Tutorial
-# https://elementsproject.org/elements-code-tutorial/working-environment
+# Docker setup for Liquid Testnet
+# https://liquidtestnet.com/
 #
-# This creates the same environment as the tutorial:
-# - 1 Bitcoin Core node (regtest)
-# - 2 Elements nodes (elementsregtest) connected to each other
+# This connects two Elements nodes to the public Liquid Testnet
 
 services:
-  # Bitcoin Core - Main chain for pegin testing
-  bitcoind:
-    image: blockstream/bitcoind:latest
-    container_name: tutorial_bitcoind
-    volumes:
-      - ./bitcoindir:/root/.bitcoin
-    ports:
-      - "18888:18888"  # RPC
-      - "18889:18889"  # P2P
-    networks:
-      - elements_network
-    restart: unless-stopped
-    command: bitcoind -regtest
-    healthcheck:
-      test: ["CMD", "bitcoin-cli", "-regtest", "-rpcuser=user3", "-rpcpassword=password3", "getblockchaininfo"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Elements Node 1
+  # Elements Node 1 - Connected to Liquid Testnet
   elementsd1:
     image: blockstream/elementsd:latest
     container_name: tutorial_elementsd1
@@ -37,17 +16,15 @@ services:
     networks:
       - elements_network
     restart: unless-stopped
-    command: elementsd -chain=elementsregtest
-    depends_on:
-      bitcoind:
-        condition: service_healthy
+    command: elementsd -chain=liquidtestnet
     healthcheck:
-      test: ["CMD", "elements-cli", "-chain=elementsregtest", "-rpcuser=user1", "-rpcpassword=password1", "getblockchaininfo"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "elements-cli", "-chain=liquidtestnet", "-rpcuser=user1", "-rpcpassword=password1", "getblockchaininfo"]
+      interval: 30s
+      timeout: 10s
       retries: 5
+      start_period: 60s
 
-  # Elements Node 2 (connects to Node 1)
+  # Elements Node 2 - Connected to Liquid Testnet
   elementsd2:
     image: blockstream/elementsd:latest
     container_name: tutorial_elementsd2
@@ -59,15 +36,13 @@ services:
     networks:
       - elements_network
     restart: unless-stopped
-    command: elementsd -chain=elementsregtest
-    depends_on:
-      elementsd1:
-        condition: service_healthy
+    command: elementsd -chain=liquidtestnet
     healthcheck:
-      test: ["CMD", "elements-cli", "-chain=elementsregtest", "-rpcuser=user2", "-rpcpassword=password2", "getblockchaininfo"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "elements-cli", "-chain=liquidtestnet", "-rpcuser=user2", "-rpcpassword=password2", "getblockchaininfo"]
+      interval: 30s
+      timeout: 10s
       retries: 5
+      start_period: 60s
 
 networks:
   elements_network:

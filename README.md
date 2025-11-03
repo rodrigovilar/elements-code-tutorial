@@ -1,14 +1,20 @@
-# Elements Project Tutorial - Docker Setup
+# Liquid Testnet - Docker Setup
 
-This repository contains the Docker configuration to follow the [Elements Project Tutorial](https://elementsproject.org/elements-code-tutorial/working-environment).
+This repository contains the Docker configuration to connect to the [Liquid Testnet](https://liquidtestnet.com/).
+
+## What is Liquid Testnet?
+
+Liquid Testnet is a public test network for the Liquid Network (a Bitcoin sidechain). It allows you to:
+- Test Liquid features without using real funds
+- Connect to a real federated network with actual block production
+- Get test L-BTC from the faucet
+- Test real-world scenarios and integrations
 
 ## Structure
 
 ```
 tutorial/
 ├── docker-compose.yml          # Container configuration
-├── bitcoindir/
-│   └── bitcoin.conf           # Bitcoin Core configuration
 ├── elementsdir1/
 │   └── elements.conf          # Elements Node 1 configuration
 ├── elementsdir2/
@@ -21,6 +27,7 @@ tutorial/
 
 - Docker
 - Docker Compose
+- Internet connection (to connect to Liquid Testnet)
 
 ## Starting the Environment
 
@@ -28,9 +35,11 @@ tutorial/
 docker compose up -d
 ```
 
+**Note**: Initial synchronization will take some time as the nodes download the blockchain from the network.
+
 ## Using the Commands
 
-There are two ways to use the tutorial commands:
+There are two ways to use the commands:
 
 ### Option 1: Using the aliases script (recommended)
 
@@ -40,19 +49,16 @@ Load the aliases script in your terminal:
 source elements-aliases.sh
 ```
 
-Now you can use the same commands as the tutorial:
+Now you can use these commands:
 
 ```bash
-# Bitcoin
-b-cli getblockcount
-b-cli generate 101
-
 # Elements Node 1
-e1-cli getblockcount
+e1-cli getblockchaininfo
 e1-cli getnewaddress
+e1-cli getbalance
 
 # Elements Node 2
-e2-cli getblockcount
+e2-cli getblockchaininfo
 e2-cli getpeerinfo
 ```
 
@@ -61,36 +67,30 @@ e2-cli getpeerinfo
 If you prefer not to use aliases:
 
 ```bash
-# Bitcoin
-docker exec tutorial_bitcoind bitcoin-cli -regtest -rpcuser=user3 -rpcpassword=password3 getblockcount
-
 # Elements Node 1
-docker exec tutorial_elementsd1 elements-cli -chain=elementsregtest -rpcuser=user1 -rpcpassword=password1 getblockcount
+docker exec tutorial_elementsd1 elements-cli -chain=liquidtestnet -rpcuser=user1 -rpcpassword=password1 getblockchaininfo
 
 # Elements Node 2
-docker exec tutorial_elementsd2 elements-cli -chain=elementsregtest -rpcuser=user2 -rpcpassword=password2 getblockcount
+docker exec tutorial_elementsd2 elements-cli -chain=liquidtestnet -rpcuser=user2 -rpcpassword=password2 getblockchaininfo
 ```
 
 ## Available Commands
 
 When you load `elements-aliases.sh` with `source`, you get access to these commands:
 
-### Tutorial Commands (same interface as the original tutorial)
+### Node Commands
 ```bash
-b-cli <command>     # Execute bitcoin-cli commands
 e1-cli <command>    # Execute elements-cli commands on node 1
 e2-cli <command>    # Execute elements-cli commands on node 2
 ```
 
 ### Container Management
 ```bash
-# Start individual nodes (equivalent to tutorial's *-dae commands)
-b-dae               # Start bitcoind
+# Start individual nodes
 e1-dae              # Start elementsd1
 e2-dae              # Start elementsd2
 
 # Stop individual nodes
-b-stop              # Stop bitcoind
 e1-stop             # Stop elementsd1
 e2-stop             # Stop elementsd2
 
@@ -103,7 +103,6 @@ elements-status     # View container status
 ### View Logs
 ```bash
 # Individual logs (follow mode)
-b-logs              # View bitcoind logs
 e1-logs             # View elementsd1 logs
 e2-logs             # View elementsd2 logs
 
@@ -111,32 +110,46 @@ e2-logs             # View elementsd2 logs
 elements-logs       # View all container logs
 ```
 
+## Getting Test Funds
+
+To get test L-BTC for your wallet:
+
+1. Get a new address:
+   ```bash
+   e1-cli getnewaddress
+   ```
+
+2. Visit the faucet: https://liquidtestnet.com/faucet
+
+3. Enter your address and request test funds
+
+4. Wait for the transaction to be confirmed (check with `e1-cli getbalance`)
+
 ## Network Configuration
 
-### Bitcoin Core (regtest)
-- RPC: localhost:18888
-- P2P: localhost:18889
-- User: user3
-- Password: password3
-
-### Elements Node 1 (elementsregtest)
+### Elements Node 1 (liquidtestnet)
 - RPC: localhost:18884
 - P2P: localhost:18886
 - User: user1
 - Password: password1
 
-### Elements Node 2 (elementsregtest)
+### Elements Node 2 (liquidtestnet)
 - RPC: localhost:18885
 - P2P: localhost:18887
 - User: user2
 - Password: password2
 
-## Following the Tutorial
+Both nodes connect to public Liquid Testnet peers:
+- liquid.network:18844
+- liquid-testnet.blockstream.com:18891
+- liquidtestnet.com:18891
 
-Now you can follow the official tutorial at:
-https://elementsproject.org/elements-code-tutorial/working-environment
+## Monitoring
 
-All tutorial commands will work the same way, just use the configured aliases!
+- **Block Explorer**: https://liquidtestnet.com/
+- **Check sync status**: `e1-cli getblockchaininfo`
+- **View connected peers**: `e1-cli getpeerinfo`
+- **Check wallet balance**: `e1-cli getbalance`
 
 ## Stopping the Environment
 
@@ -144,8 +157,18 @@ All tutorial commands will work the same way, just use the configured aliases!
 docker compose down
 ```
 
-To also remove volumes (persistent data):
+To also remove volumes (blockchain data):
 
 ```bash
 docker compose down -v
 ```
+
+**Warning**: Removing volumes will delete the blockchain data and you'll need to re-sync from scratch.
+
+## Useful Resources
+
+- **Liquid Testnet Website**: https://liquidtestnet.com/
+- **Liquid Network Documentation**: https://docs.liquid.net/
+- **Elements Project**: https://elementsproject.org/
+- **Block Explorer**: https://liquidtestnet.com/
+- **Faucet**: https://liquidtestnet.com/faucet
